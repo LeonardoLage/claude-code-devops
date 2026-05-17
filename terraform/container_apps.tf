@@ -98,10 +98,21 @@ resource "azurerm_container_app" "main" {
       }
     }
 
-    max_replicas = var.app_replicas
-    min_replicas = var.app_replicas
-
     revision_suffix = "v1"
+  }
+
+  scale {
+    min_replicas = var.app_min_replicas
+    max_replicas = var.app_max_replicas
+
+    rules {
+      name = "http"
+      http {
+        metadata {
+          concurrency_target = var.app_concurrent_requests
+        }
+      }
+    }
   }
 
   ingress {

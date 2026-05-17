@@ -15,8 +15,8 @@ resource "azurerm_postgresql_flexible_server" "main" {
   version    = "15"
   storage_mb = var.db_storage_mb
 
-  backup_retention_days        = var.backup_retention_days
-  geo_redundant_backup_enabled = var.environment == "prod" ? true : false
+  backup_retention_days        = var.enable_backup ? var.backup_retention_days : 1
+  geo_redundant_backup_enabled = false
 
   tags = azurerm_resource_group.main.tags
 }

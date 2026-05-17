@@ -41,13 +41,28 @@ variable "db_name" {
   default     = "kubedevnews"
 }
 
-variable "app_replicas" {
-  description = "Number of replicas for the app"
+variable "app_min_replicas" {
+  description = "Minimum number of replicas for the app (KEDA scaling)"
   type        = number
   validation {
-    condition     = var.app_replicas >= 1 && var.app_replicas <= 10
-    error_message = "App replicas must be between 1 and 10."
+    condition     = var.app_min_replicas >= 0 && var.app_min_replicas <= 10
+    error_message = "Min replicas must be between 0 and 10."
   }
+}
+
+variable "app_max_replicas" {
+  description = "Maximum number of replicas for the app (KEDA scaling)"
+  type        = number
+  validation {
+    condition     = var.app_max_replicas >= 1 && var.app_max_replicas <= 10
+    error_message = "Max replicas must be between 1 and 10."
+  }
+}
+
+variable "app_concurrent_requests" {
+  description = "Target number of concurrent HTTP requests per replica"
+  type        = number
+  default     = 100
 }
 
 variable "app_cpu" {
@@ -78,6 +93,12 @@ variable "backup_retention_days" {
   description = "Database backup retention in days"
   type        = number
   default     = 7
+}
+
+variable "enable_backup" {
+  description = "Enable database backups"
+  type        = bool
+  default     = true
 }
 
 variable "enable_public_endpoint" {

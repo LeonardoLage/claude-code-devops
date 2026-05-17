@@ -7,10 +7,11 @@ terraform/
 ├── *.tf files                           # Código Terraform compartilhado
 ├── Makefile                             # Comandos para Deploy
 ├── deploy.sh                            # Script de Deploy
+├── setup-backend.sh                     # Setup Storage para State
 ├── environments/
 │   ├── dev/
 │   │   ├── terraform.tfvars            # Variáveis Dev
-│   │   └── backend.tf                  # State local
+│   │   └── backend.tf                  # State no Azure Storage
 │   └── prod/
 │       ├── terraform.tfvars            # Variáveis Prod
 │       └── backend.tf                  # State no Azure Storage
@@ -26,7 +27,16 @@ az login
 az account set --subscription <SUBSCRIPTION_ID>
 ```
 
-### 2️⃣ Editar variáveis
+### 2️⃣ Setup Storage para State (executar uma vez)
+
+```bash
+cd terraform
+./setup-backend.sh eastus
+```
+
+Isso cria Storage Accounts para armazenar o state (Terraform state files).
+
+### 3️⃣ Editar variáveis
 
 ```bash
 # Dev (usar para testes)
@@ -38,7 +48,7 @@ vim terraform/environments/prod/terraform.tfvars
 
 **⚠️ Importante**: Mudar `db_admin_password` em ambos os arquivos!
 
-### 3️⃣ Deploy Dev
+### 4️⃣ Deploy Dev
 
 ```bash
 cd terraform
@@ -54,7 +64,7 @@ make apply ENVIRONMENT=dev
 ./deploy.sh dev apply
 ```
 
-### 4️⃣ Acessar aplicação
+### 5️⃣ Acessar aplicação
 
 ```bash
 # Ver outputs
@@ -80,22 +90,41 @@ make apply ENVIRONMENT=prod
 ./deploy.sh prod apply
 ```
 
+## 📊 Scaling com KEDA
+
+App usa **KEDA HTTP scaling** (Kubernetes Event Driven Auto-scaling):
+
+### Dev
+- Min Replicas: **0** (scale down quando ocioso, sem custo)
+- Max Replicas: **1**
+- Trigger: 100 requisições HTTP concorrentes por replica
+
+### Prod
+- Min Replicas: **1** (sempre online)
+- Max Replicas: **2**
+- Trigger: 100 requisições HTTP concorrentes por replica
+
+Exemplo: Se tiver 150 requisições, Prod escalará para 2 replicas.
+
 ## 📊 Variáveis Principais
 
 ### Dev
-- Replicas: 1
+- Min Replicas: 0 (KEDA)
+- Max Replicas: 1 (KEDA)
 - CPU: 0.25 cores
 - Memory: 0.5Gi
 - DB: B_Standard_B1ms (free tier)
-- Backup: 7 dias
+- Backup: ❌ Desabilitado
+- Geo-redundancy: ❌ Não
 
 ### Prod
-- Replicas: 2
+- Min Replicas: 1 (KEDA)
+- Max Replicas: 2 (KEDA)
 - CPU: 0.5 cores
 - Memory: 1Gi
 - DB: B_Standard_B2s
-- Backup: 30 dias
-- Geo-redundancy: Sim
+- Backup: ✅ 30 dias
+- Geo-redundancy: ❌ Não
 
 ## 🛑 Destruir Infraestrutura
 
