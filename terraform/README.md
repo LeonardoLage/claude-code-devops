@@ -73,9 +73,18 @@ terraform/
 
 ## Setup Inicial
 
-### 1. Estrutura de diretórios
+### 1. Criar Storage Accounts para State (Required)
 
-A estrutura já está criada em `terraform/environments/{dev,prod}/`
+```bash
+cd terraform
+./setup-backend.sh eastus
+```
+
+Isso cria:
+- Resource Group: `terraform-state-rg`
+- Storage Account: `tfstatedev` (Dev)
+- Storage Account: `tfstateprod` (Prod)
+- Containers: `tfstate` em cada account
 
 ### 2. Configurar variáveis
 
@@ -102,8 +111,7 @@ terraform init
 #### Prod:
 ```bash
 cd terraform/environments/prod
-# Para usar Azure Storage como backend:
-terraform init -backend-config=backend.tf
+terraform init
 ```
 
 ## Deployment
@@ -147,15 +155,18 @@ terraform destroy -var-file=terraform.tfvars
 | Aspecto | Dev | Prod |
 |---|---|---|
 | **Location** | eastus | eastus |
-| **App Replicas** | 1 | 2 |
+| **App Min Replicas** | 0 (KEDA) | 1 (KEDA) |
+| **App Max Replicas** | 1 (KEDA) | 2 (KEDA) |
+| **Scaling Trigger** | HTTP Concurrency (100 req) | HTTP Concurrency (100 req) |
 | **App CPU** | 0.25 | 0.5 |
 | **App Memory** | 0.5Gi | 1Gi |
 | **DB SKU** | B_Standard_B1ms | B_Standard_B2s |
 | **DB Storage** | 32GB | 64GB |
-| **Backup Retention** | 7 dias | 30 dias |
-| **Geo-Redundancy** | Não | Sim |
+| **Backup** | ❌ Desabilitado | ✅ 30 dias |
+| **Geo-Redundancy** | ❌ Não | ❌ Não |
 | **Log Retention** | 30 dias | 90 dias |
-| **Public Endpoint** | Não | Não |
+| **Public Endpoint** | ❌ Não | ❌ Não |
+| **State Backend** | Azure Storage | Azure Storage |
 
 ## Secrets Management
 
